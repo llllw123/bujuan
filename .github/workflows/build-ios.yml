@@ -1,0 +1,37 @@
+name: Build iOS IPA from Fork
+
+on:
+  workflow_dispatch: # 手动触发
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-ios:
+    name: Build Flutter iOS IPA
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.5' # 根据原项目使用的版本调整
+        
+    - name: Install dependencies
+      run: |
+        flutter pub get
+        cd ios
+        pod install --repo-update
+        cd ..
+        
+    - name: Build iOS IPA (Unsigned)
+      run: flutter build ipa --no-codesign --release
+      
+    - name: Upload IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: iOS-IPA-unsigned
+        path: build/ios/ipa/*.ipa
+        retention-days: 7
