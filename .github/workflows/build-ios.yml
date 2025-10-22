@@ -13,17 +13,23 @@ jobs:
     steps:
     - name: Checkout main project
       uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.19.5'
 
+    - name: Verify dependency configuration
+      run: |
+        echo "=== 检查依赖配置 ==="
+        grep -A 3 "bujuan_music_api" pubspec.yaml
+        echo "API 仓库分支: $(grep -A 3 "bujuan_music_api" pubspec.yaml | grep "ref:" | cut -d: -f2 | tr -d ' ')"
+        
     - name: Install dependencies
-      run: flutter pub get
-
+      run: |
+        echo "开始安装依赖..."
+        flutter pub get --verbose
+        
     - name: Build iOS IPA
       run: flutter build ipa --no-codesign --release
 
