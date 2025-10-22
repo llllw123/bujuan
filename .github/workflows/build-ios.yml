@@ -1,41 +1,44 @@
-name: Build iOS IPA
+name: Simple iOS Build
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main, master ]
 
 jobs:
-  build-ios:
-    name: Build Flutter iOS IPA
+  build:
     runs-on: macos-latest
-
+    
     steps:
-    - name: Checkout main project
+    - name: Checkout
       uses: actions/checkout@v4
-
+      
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.19.5'
-
-    - name: Verify dependency configuration
+      
+    - name: Create minimal pubspec override
       run: |
-        echo "=== 检查依赖配置 ==="
-        grep -A 3 "bujuan_music_api" pubspec.yaml
-        echo "API 仓库分支: $(grep -A 3 "bujuan_music_api" pubspec.yaml | grep "ref:" | cut -d: -f2 | tr -d ' ')"
+        echo "创建临时 pubspec.yaml 测试..."
+        cp pubspec.yaml pubspec.yaml.backup
+        # 创建一个简化的版本，只保留基本依赖
+        cat > pubspec_minimal.yaml << EOF
+        name: test_build
+        environment:
+          sdk: ">=2.12.0 <3.0.0"
+        dependencies:
+          flutter:
+            sdk: flutter
+          bujuan_music_api:
+            git:
+              url: https://github.com/你的用户名/bujuan_music_api.git
+              ref: master
+        EOF
+        mv pubspec_minimal.yaml pubspec.yaml
         
-    - name: Install dependencies
+    - name: Test dependency resolution
       run: |
-        echo "开始安装依赖..."
-        flutter pub get --verbose
+        flutter pub get
+        echo "依赖解析成功！"
         
-    - name: Build iOS IPA
-      run: flutter build ipa --no-codesign --release
-
-    - name: Upload IPA artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: iOS-IPA
-        path: build/ios/ipa/*.ipa
-        retention-days: 7
+    - name: Restore original pubspec
+      if: always()
+      run: |
+        mv pubspec.yaml.backup pubspec.yaml || true
