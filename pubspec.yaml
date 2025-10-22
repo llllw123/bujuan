@@ -42,7 +42,7 @@ dependencies:
   bujuan_music_api:
     git:
       url: https://github.com/llllw123/bujuan_music_api.git
-      ref: main  # 或者实际的分支名
+      ref: master  # 或者实际的分支名
   path_provider: ^2.1.5
   cached_network_image: ^3.4.1
 #  hugeicons: ^0.0.11
