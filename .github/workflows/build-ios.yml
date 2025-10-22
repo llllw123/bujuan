@@ -1,27 +1,35 @@
-name: Simple iOS Build
+name: Build iOS IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main, master ]
 
 jobs:
-  build:
+  build-ios:
+    name: Build Flutter iOS IPA
     runs-on: macos-latest
-    
+
     steps:
-    - name: Checkout code
+    - name: Checkout main project
       uses: actions/checkout@v4
-      
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
-      
-    - name: Get dependencies
+      with:
+        flutter-version: '3.19.5'
+
+    - name: Install dependencies
       run: flutter pub get
-      
-    - name: Build IPA
-      run: flutter build ipa --no-codesign
-      
-    - name: Upload build
+
+    - name: Build iOS IPA
+      run: flutter build ipa --no-codesign --release
+
+    - name: Upload IPA artifact
       uses: actions/upload-artifact@v4
       with:
-        name: app-build
-        path: build/ios/ipa/
+        name: iOS-IPA
+        path: build/ios/ipa/*.ipa
+        retention-days: 7
