@@ -1,0 +1,51 @@
+name: Build Bujuan iOS IPA
+on: [workflow_dispatch] # 手动触发构建（避免提交代码自动触发）
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+      
+      - name: 安装CocoaPods依赖
+        run: pod install --project-directory=. # 该项目包含Podfile，需执行pod install
+      
+      - name: 归档项目（关闭代码签名）
+        run: |
+          xcodebuild archive \
+          -workspace bujuan.xcworkspace \ # 项目核心为workspace文件
+          -scheme bujuan \ # 项目Scheme名称为bujuan
+          -sdk iphoneos \
+          -configuration Release \
+          -archivePath ./build/APP.xcarchive \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO
+      
+      - name: 创建导出配置文件
+        run: |
+          echo '<?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>CODE_SIGNING_ALLOWED</key>
+            <false/>
+          </dict>
+          </plist>' > ExportOptions.plist
+      
+      - name: 导出IPA文件
+        run: |
+          xcodebuild -exportArchive \
+          -archivePath ./build/APP.xcarchive \
+          -exportPath ./build/ipa \
+          -exportOptionsPlist ExportOptions.plist \
+          -allowProvisioningUpdates
+      
+      - name: 上传IPA产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: bujuan-ipa
+          path: ./build/ipa/*.ipa
